@@ -2,17 +2,43 @@
 set -e
 
 echo "============================================================="
-echo "   APK Security Audit – Instalador Automático de Dependencias"
+echo "   APK Security Audit – Instalador Automático (Kali Friendly)"
 echo "============================================================="
 
 OS="$(uname -s)"
 
-install_python_packages() {
-    echo "[+] Instalando dependencias Python..."
-    pip3 install --upgrade pip
-    pip3 install androguard jinja2 requests python-magic > /dev/null
-}
+# -----------------------------
+#  1. Crear entorno virtual
+# -----------------------------
+echo ""
+echo "🔧 Verificando entorno virtual Python..."
 
+if [ ! -d "venv" ]; then
+    echo "[+] Creando entorno virtual en ./venv"
+    python3 -m venv venv
+else
+    echo "[+] Entorno virtual ya existe."
+fi
+
+# Activar entorno virtual
+source venv/bin/activate
+
+echo "[+] Entorno virtual activado: $(which python3)"
+
+# -----------------------------
+#  2. Instalar dependencias Python dentro del venv
+# -----------------------------
+echo ""
+echo "🔧 Instalando dependencias Python (en entorno virtual)..."
+
+pip install --upgrade pip >/dev/null
+pip install androguard jinja2 requests python-magic >/dev/null
+
+echo "[+] Dependencias Python instaladas."
+
+# -----------------------------
+# 3. Instalar apktool
+# -----------------------------
 install_apktool_linux() {
     echo "[+] Instalando apktool (Linux)..."
     wget -q https://raw.githubusercontent.com/iBotPeaches/Apktool/master/scripts/linux/apktool
@@ -27,6 +53,22 @@ install_apktool_macos() {
     brew install apktool
 }
 
+echo ""
+echo "🔎 Comprobando apktool..."
+if ! command -v apktool &> /dev/null; then
+    echo "[!] apktool no está instalado."
+    if [[ "$OS" == "Linux" ]]; then
+        install_apktool_linux
+    elif [[ "$OS" == "Darwin" ]]; then
+        install_apktool_macos
+    fi
+else
+    echo "[+] apktool OK."
+fi
+
+# -----------------------------
+# 4. Instalar jadx
+# -----------------------------
 install_jadx_linux() {
     echo "[+] Instalando jadx (Linux)..."
     JADX_VERSION=$(curl -s https://api.github.com/repos/skylot/jadx/releases/latest | grep tag_name | cut -d '"' -f4)
@@ -41,71 +83,6 @@ install_jadx_macos() {
     brew install jadx
 }
 
-check_or_install_docker() {
-    if ! command -v docker &> /dev/null; then
-        echo "[!] Docker no está instalado."
-        echo "    Si deseas usar MobSF, instala docker manualmente:"
-        echo "    https://docs.docker.com/get-docker/"
-    else
-        echo "[+] Docker encontrado."
-    fi
-}
-
-check_or_install_mobsf() {
-    if ! docker ps | grep -q mobsf; then
-        echo "[-] MobSF no está corriendo."
-        echo "¿Quieres instalar/levantar MobSF automáticamente? (s/n)"
-        read opt
-        if [[ "$opt" == "s" ]]; then
-            echo "[+] Levantando MobSF con Docker..."
-            docker run --rm -d -p 8000:8000 --name mobsf \
-                opensecurity/mobile-security-framework-mobsf
-            echo "[+] MobSF iniciado en http://127.0.0.1:8000"
-            echo "    Ve a Settings > API Key y exporta tu API key:"
-            echo "    export MOBSF_API_KEY=\"TU_API_KEY\""
-        else
-            echo "[!] MobSF no será instalado (opcional)."
-        fi
-    else
-        echo "[+] MobSF ya se está ejecutando."
-    fi
-}
-
-echo ""
-echo "🔎 Comprobando Python 3..."
-if ! command -v python3 &> /dev/null; then
-    echo "[!] Python3 no está instalado. Instálalo antes de continuar."
-    exit 1
-fi
-echo "[+] Python3 OK."
-
-echo ""
-echo "🔎 Comprobando pip..."
-if ! command -v pip3 &> /dev/null; then
-    echo "[!] pip3 no está instalado. Instalando..."
-    sudo apt install -y python3-pip || sudo brew install python3
-else
-    echo "[+] pip3 OK."
-fi
-
-install_python_packages
-
-echo ""
-echo "🔎 Comprobando apktool..."
-if ! command -v apktool &> /dev/null; then
-    echo "[!] apktool no está instalado."
-    if [[ "$OS" == "Linux" ]]; then
-        install_apktool_linux
-    elif [[ "$OS" == "Darwin" ]]; then
-        install_apktool_macos
-    else
-        echo "[!] Sistema operativo no detectado. Instala apktool manualmente."
-        exit 1
-    fi
-else
-    echo "[+] apktool OK."
-fi
-
 echo ""
 echo "🔎 Comprobando jadx..."
 if ! command -v jadx &> /dev/null; then
@@ -118,29 +95,62 @@ if ! command -v jadx &> /dev/null; then
         elif [[ "$OS" == "Darwin" ]]; then
             install_jadx_macos
         fi
-        echo "[+] JADX instalado."
     else
-        echo "[!] Se omitió instalación de JADX (opcional)."
+        echo "[!] Se omitió instalación de JADX."
     fi
 else
     echo "[+] JADX OK."
 fi
 
+# -----------------------------
+# 5. Docker / MobSF
+# -----------------------------
 echo ""
 echo "🔎 Comprobando Docker..."
-check_or_install_docker
 
+if ! command -v docker &> /dev/null; then
+    echo "[!] Docker NO está instalado."
+    echo "    Si quieres usar MobSF deberás instalar docker manualmente."
+else
+    echo "[+] Docker OK."
+    echo ""
+
+    echo "🔎 Comprobando MobSF..."
+    if ! docker ps | grep -q mobsf; then
+        echo "[!] MobSF no está corriendo."
+        echo "¿Levantar MobSF con Docker ahora? (s/n)"
+        read opt
+        if [[ "$opt" == "s" ]]; then
+            echo "[+] Iniciando MobSF..."
+            docker run --rm -d -p 8000:8000 --name mobsf \
+                opensecurity/mobile-security-framework-mobsf
+            echo "[+] MobSF disponible en http://127.0.0.1:8000"
+        fi
+    else
+        echo "[+] MobSF ya está en ejecución."
+    fi
+fi
+
+# -----------------------------
+# 6. Ajustar run_audit.sh para usar el venv
+# -----------------------------
 echo ""
-echo "🔎 Comprobando MobSF..."
-check_or_install_mobsf
+echo "🔧 Ajustando run_audit.sh para usar el entorno virtual..."
+
+if grep -q "source venv/bin/activate" run_audit.sh; then
+    echo "[+] run_audit.sh ya está configurado."
+else
+    sed -i '1isource venv/bin/activate' run_audit.sh
+    echo "[+] run_audit.sh modificado para activar venv automáticamente."
+fi
 
 echo ""
 echo "============================================================="
-echo " ✔ Entorno listo para ejecutar:"
-echo "      ./run_audit.sh <apk> <output_dir>"
+echo " ✔ ENTORNO LISTO PARA USO"
+echo "-------------------------------------------------------------"
+echo " Ejecuta auditoría con:"
+echo "     ./run_audit.sh myapp.apk results/"
+echo ""
+echo " Si usas MobSF, exporta tu API key:"
+echo "     export MOBSF_API_KEY=\"TU_API_KEY\""
 echo "============================================================="
-echo ""
-echo "Si usarás MobSF, recuerda exportar tu API Key:"
-echo "    export MOBSF_API_KEY=\"TU_API_KEY\""
-echo ""
-echo "¡Todo listo! 🚀"
