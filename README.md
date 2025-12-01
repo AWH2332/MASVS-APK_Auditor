@@ -1,13 +1,21 @@
 APK Security Audit – README
 
 Este proyecto proporciona una herramienta avanzada para el análisis estático de aplicaciones Android (.apk), alineada con OWASP MSTG y MASVS, incorporando:
+
   ✔ Descompilación con jadx (opcional)
+  
   ✔ Análisis profundo con Androguard
+  
   ✔ Detección de criptografía débil / storage inseguro
+  
   ✔ Evaluación MASVS por categorías (STORAGE, RESILIENCE, CRYPTO, NETWORK…)
+  
   ✔ Integración con MobSF (opcional)
+  
   ✔ Generación de reportes: HTML + JSON (CI/CD friendly)
+  
   ✔ Salida de error para pipelines en caso de vulnerabilidades HIGH
+  
 
   Estructura del proyecto
   /
