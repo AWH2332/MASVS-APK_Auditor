@@ -41,11 +41,8 @@ echo "[+] Dependencias Python instaladas."
 # -----------------------------
 install_apktool_linux() {
     echo "[+] Instalando apktool (Linux)..."
-    wget -q https://raw.githubusercontent.com/iBotPeaches/Apktool/master/scripts/linux/apktool
-    wget -q https://raw.githubusercontent.com/iBotPeaches/Apktool/master/scripts/linux/apktool.jar
-    chmod +x apktool
-    sudo mv apktool /usr/local/bin/
-    sudo mv apktool.jar /usr/local/bin/
+    sudo apt install apktool -y
+
 }
 
 install_apktool_macos() {
@@ -71,11 +68,8 @@ fi
 # -----------------------------
 install_jadx_linux() {
     echo "[+] Instalando jadx (Linux)..."
-    JADX_VERSION=$(curl -s https://api.github.com/repos/skylot/jadx/releases/latest | grep tag_name | cut -d '"' -f4)
-    wget -q https://github.com/skylot/jadx/releases/download/${JADX_VERSION}/jadx-${JADX_VERSION}.zip
-    unzip -q jadx-${JADX_VERSION}.zip
-    sudo mv jadx-*/bin/jadx /usr/local/bin/
-    sudo mv jadx-*/bin/jadx-gui /usr/local/bin/
+    sudo apt install jadx -y
+
 }
 
 install_jadx_macos() {
