@@ -1,0 +1,34 @@
+Cómo usar (resumen)
+
+Asegúrate de tener apktool, jadx (si quieres usar --use-jadx) y dependencias Python instaladas.
+
+Ejecuta:
+
+chmod +x run_audit.sh
+./run_audit.sh path/to/app.apk results_dir
+# o usar directamente python:
+python3 apk_audit_extended.py --apk path/to/app.apk --outdir results_dir --use-jadx --mobsf-url http://127.0.0.1:8000
+
+
+Resultados:
+
+results_dir/report.json → JSON listo para CI.
+
+results_dir/report.html → Informe navegable.
+
+results_dir/raw/ → artefactos (AndroidManifest, opz: jadx dir, mobsf.json si aplica).
+
+Exit codes:
+
+0 → OK (no HIGH issues)
+
+2 → Se encontraron HIGH issues (útil para pipelines)
+
+
+Limitaciones y recomendaciones finales (transparente)
+
+Heurístico vs definitivo: muchos controles MASVS (por ejemplo: pinning efectivo, secure SSL configuration at runtime, protection against dynamic instrumentation, secure key storage with hardware-backed keystore) no se pueden confirmar con certeza desde análisis estático puro. El script marca evidencia y devuelve KO/WARN cuando encuentra patrones problemáticos, pero siempre requiere validación manual o pruebas dinámicas (emulación, Frida, instrumentación).
+
+Falsos positivos / negativos: búsquedas por strings y regex pueden generar falsos positivos; úsalo como primer filtrado para priorizar revisiones manuales.
+
+Mejoras posibles: añadir reglas MASVS mapeadas 1:1 (puedo automatizar cada control si quieres), integrar pipelines de CI (ej. GitHub Actions) y scripts Frida para pruebas dinámicas (pinning bypass, cert validation tests).
