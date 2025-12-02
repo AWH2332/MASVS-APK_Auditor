@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>APK Security Audit Report</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+            background: #f4f4f4;
+        }
+        .card {
+            background: white;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 6px #aaa;
+        }
+        h1, h2, h3 {
+            margin-top: 0;
+        }
+        .ok { color: green; font-weight: bold; }
+        .ko { color: red; font-weight: bold; }
+        .warn { color: orange; font-weight: bold; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+        }
+        th {
+            background: #333;
+            color: white;
+        }
+        tr:nth-child(odd) { background: #fafafa; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>📱 APK Security Audit Report</h1>
+    <p><strong>APK:</strong> {{ report.metadata.apk }}</p>
+    <p><strong>Generated:</strong> {{ report.metadata.timestamp }}</p>
+    <p><strong>Tool:</strong> {{ report.metadata.tool }}</p>
+
+    <h3>Summary</h3>
+    <p>
+        OK: <span class="ok">{{ report.summary.ok }}</span> —
+        KO: <span class="ko">{{ report.summary.ko }}</span> —
+        WARN: <span class="warn">{{ report.summary.warn }}</span>
+    </p>
+</div>
+
+<div class="card">
+    <h2>MASVS Results</h2>
+
+    {% for category, checks in report.masvs.items() %}
+    <div class="card">
+        <h3>{{ category }}</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Description</th>
+                    <th>Result</th>
+                    <th>Evidence</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in checks %}
+                <tr>
+                    <td>{{ c.id }}</td>
+                    <td>{{ c.desc }}</td>
+                    <td>
+                        {% if c.ok %}
+                            <span class="ok">OK</span>
+                        {% else %}
+                            <span class="ko">KO</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if c.evidence %}
+                            <pre>{{ c.evidence | join("\n") }}</pre>
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endfor %}
+</div>
+
+</body>
+</html>
